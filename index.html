@@ -1,194 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EliteW1n88</title>
-    <style>
-        body {
-            background-color: black;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        .container {
-            width: 300px;
-            margin: 100px auto;
-            padding: 20px;
-            background: #222;
-            border-radius: 10px;
-        }
-        input, button {
-            width: 100%;
-            margin: 5px 0;
-            padding: 10px;
-            font-size: 16px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EliteW1n88</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #fff;
+    }
+    input {
+      padding: 10px;
+      margin: 10px;
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #444;
+      width: 250px;
+    }
+    button {
+      padding: 10px;
+      background-color: #ffcc00;
+      color: #121212;
+      border: none;
+      cursor: pointer;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+    .container h1 {
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>EliteW1n88 Login</h1>
+    <input id="email" type="email" placeholder="Enter Email" />
+    <input id="password" type="password" placeholder="Enter Password" />
+    <button onclick="login()">Login</button>
+    <p id="message"></p>
+  </div>
 
-    <div class="container" id="loginPage">
-        <h2>Login</h2>
-        <input type="email" id="email" placeholder="Enter Email">
-        <input type="password" id="password" placeholder="Enter Password">
-        <button onclick="login()">Login</button>
-        <button onclick="register()">Register</button>
-    </div>
+  <!-- Firebase SDK CDN -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
-    <div class="container" id="userPage" style="display: none;">
-        <h2>Welcome, <span id="userEmail"></span></h2>
-        <p>Your Balance: <span id="userBalance">0</span> Coins</p>
-        <button onclick="logout()">Logout</button>
-    </div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZVT5TuV7bsKsQoPos1T2MjSy4_6bnXbc",
+      authDomain: "elitew1n88.firebaseapp.com",
+      projectId: "elitew1n88",
+      storageBucket: "elitew1n88.firebasestorage.app",
+      messagingSenderId: "731766083369",
+      appId: "1:731766083369:web:aeb2d8db5b0f5485437138",
+      measurementId: "G-Z4XQBNK78M"
+    };
 
-    <div class="container" id="adminPanel" style="display: none;">
-        <h2>Admin Panel</h2>
-        <h3>Add Money</h3>
-        <input type="email" id="userEmailToCredit" placeholder="User Email">
-        <input type="number" id="amount" placeholder="Amount">
-        <button onclick="addMoney()">Add Money</button>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-        <h3>Create User</h3>
-        <input type="email" id="newUserEmail" placeholder="New User Email">
-        <input type="password" id="newUserPassword" placeholder="New User Password">
-        <button onclick="createUser()">Create User</button>
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
 
-        <button onclick="logout()">Logout</button>
-    </div>
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-    <script type="module">
-        // Import Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+        // Check if the user is admin by fetching from Firestore
+        const userDoc = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDoc);
 
-        // Firebase Config
-        const firebaseConfig = {
-            apiKey: "AIzaSyDZVT5TuV7bsKsQoPos1T2MjSy4_6bnXbc",
-            authDomain: "elitew1n88.firebaseapp.com",
-            projectId: "elitew1n88",
-            storageBucket: "elitew1n88.firebasestorage.app",
-            messagingSenderId: "731766083369",
-            appId: "1:731766083369:web:aeb2d8db5b0f5485437138",
-            measurementId: "G-Z4XQBNK78M"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Login Function
-        function login() {
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-
-            signInWithEmailAndPassword(auth, email, password)
-                .then(async (userCredential) => {
-                    const user = userCredential.user;
-
-                    // Get user data from Firestore
-                    const userRef = doc(db, "users", user.email);
-                    const userSnap = await getDoc(userRef);
-
-                    if (userSnap.exists()) {
-                        const userData = userSnap.data();
-                        if (userData.admin) {
-                            showAdminPanel();
-                        } else {
-                            showUserPage(user.email, userData.balance);
-                        }
-                    } else {
-                        alert("User not found in database.");
-                    }
-                })
-                .catch((error) => {
-                    alert("Login failed: " + error.message);
-                });
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          if (userData.admin === true) {
+            document.getElementById("message").textContent = "Admin logged in!";
+            // Redirect to admin panel or main page
+          } else {
+            document.getElementById("message").textContent = "User logged in!";
+            // Redirect to user main page
+          }
+        } else {
+          document.getElementById("message").textContent = "No such user found!";
         }
-
-        // Register Function
-        function register() {
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-
-            createUserWithEmailAndPassword(auth, email, password)
-                .then(async (userCredential) => {
-                    const user = userCredential.user;
-
-                    // Add user to Firestore with 0 balance
-                    await setDoc(doc(db, "users", user.email), {
-                        email: user.email,
-                        balance: 0,
-                        admin: false
-                    });
-
-                    alert("User registered successfully! You can now log in.");
-                })
-                .catch((error) => {
-                    alert("Registration failed: " + error.message);
-                });
-        }
-
-        // Logout Function
-        function logout() {
-            signOut(auth).then(() => {
-                location.reload();
-            });
-        }
-
-        // Show User Page
-        function showUserPage(email, balance) {
-            document.getElementById("loginPage").style.display = "none";
-            document.getElementById("adminPanel").style.display = "none";
-            document.getElementById("userPage").style.display = "block";
-            document.getElementById("userEmail").innerText = email;
-            document.getElementById("userBalance").innerText = balance;
-        }
-
-        // Show Admin Panel
-        function showAdminPanel() {
-            document.getElementById("loginPage").style.display = "none";
-            document.getElementById("userPage").style.display = "none";
-            document.getElementById("adminPanel").style.display = "block";
-        }
-
-        // Add Money Function (Admin)
-        async function addMoney() {
-            const email = document.getElementById("userEmailToCredit").value;
-            const amount = parseInt(document.getElementById("amount").value);
-
-            if (!email || isNaN(amount)) {
-                alert("Please enter a valid email and amount.");
-                return;
-            }
-
-            const userRef = doc(db, "users", email);
-            const userSnap = await getDoc(userRef);
-
-            if (userSnap.exists()) {
-                const currentBalance = userSnap.data().balance || 0;
-                await updateDoc(userRef, { balance: currentBalance + amount });
-                alert("Money added successfully!");
-            } else {
-                alert("User not found.");
-            }
-        }
-
-        // Create User (Admin)
-        async function createUser() {
-            const email = document.getElementById("newUserEmail").value;
-            const password = document.getElementById("newUserPassword").value;
-
-            await setDoc(doc(db, "users", email), {
-                email: email,
-                balance: 0,
-                admin: false
-            });
-
-            alert("User created successfully!");
-        }
-    </script>
+      } catch (error) {
+        document.getElementById("message").textContent = "Login failed! " + error.message;
+      }
+    }
+  </script>
 </body>
 </html>
