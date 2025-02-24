@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EliteW1n88 - Login & Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1f1f1f;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: #333;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+    }
+    .container input, .container button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #444;
+      color: white;
+    }
+    .container button {
+      background-color: #f9c74f;
+      color: black;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .container button:hover {
+      background-color: #f07b29;
+    }
+    .container a {
+      color: #f9c74f;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="login-container">
+    <h2>Login to EliteW1n88</h2>
+    <input type="email" id="email" placeholder="Enter Email" required />
+    <input type="password" id="password" placeholder="Enter Password" required />
+    <button onclick="login()">Login</button>
+    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign Up</a></p>
+  </div>
+
+  <div class="container" id="admin-container" style="display: none;">
+    <h2>Admin Panel</h2>
+    <input type="email" id="admin-userMail" placeholder="User Mail" required />
+    <input type="number" id="amount" placeholder="Amount to Add" required />
+    <button onclick="addMoney()">Add Money</button>
+    <p><button onclick="logout()">Logout</button></p>
+  </div>
+
+  <div class="container" id="dashboard-container" style="display: none;">
+    <h2>User Dashboard</h2>
+    <p id="balance">Loading balance...</p>
+    <p><button onclick="logout()">Logout</button></p>
+  </div>
+
+  <script type="module">
+    // Firebase SDK Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZVT5TuV7bsKsQoPos1T2MjSy4_6bnXbc",
+      authDomain: "elitew1n88.firebaseapp.com",
+      projectId: "elitew1n88",
+      storageBucket: "elitew1n88.firebasestorage.app",
+      messagingSenderId: "731766083369",
+      appId: "1:731766083369:web:aeb2d8db5b0f5485437138",
+      measurementId: "G-Z4XQBNK78M"
+    };
+
+    // Initialize Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    // Show Signup Form (optional)
+    function showSignup() {
+      alert("Signup functionality is not implemented in this version.");
+    }
+
+    // Login function
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        console.log("Logged in:", user.email);
+
+        // Check if user is an admin
+        if (user.email === "plusenchpersonal@gmail.com") {
+          document.getElementById("admin-container").style.display = "block";
+          document.getElementById("login-container").style.display = "none";
+        } else {
+          document.getElementById("dashboard-container").style.display = "block";
+          document.getElementById("login-container").style.display = "none";
+          fetchBalance();
+        }
+      } catch (error) {
+        alert("Error: " + error.message);
+      }
+    }
+
+    // Fetch User Balance
+    async function fetchBalance() {
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = doc(db, "users", user.email);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          document.getElementById("balance").innerText = `Balance: ${userSnap.data().balance || 0} World Locks`;
+        } else {
+          alert("User not found.");
+        }
+      } else {
+        window.location.href = "index.html"; // Redirect to login page if no user is logged in
+      }
+    }
+
+    // Add money to user account (Admin Panel)
+    async function addMoney() {
+      const userMail = document.getElementById("admin-userMail").value;
+      const amount = parseInt(document.getElementById("amount").value);
+
+      const userRef = doc(db, "users", userMail);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const currentBalance = userSnap.data().balance || 0;
+        await updateDoc(userRef, {
+          balance: currentBalance + amount
+        });
+        alert(`Successfully added ${amount} to ${userMail}`);
+      } else {
+        alert("User not found.");
+      }
+    }
+
+    // Logout function
+    function logout() {
+      signOut(auth).then(() => {
+        document.getElementById("login-container").style.display = "block";
+        document.getElementById("admin-container").style.display = "none";
+        document.getElementById("dashboard-container").style.display = "none";
+        document.getElementById("email").value = '';
+        document.getElementById("password").value = '';
+      }).catch((error) => {
+        console.error("Error logging out:", error);
+      });
+    }
+  </script>
+</body>
+</html>
